@@ -7,8 +7,8 @@ import edu.stanford.infolab.arcspreadux.photoSpreadTable.PhotoSpreadCell;
 import edu.stanford.infolab.arcspreadux.photoSpreadUtilities.PhotoSpreadObjIndexerFinder;
 import edu.stanford.infolab.arcspreadux.photoSpreadUtilities.TreeSetRandomSubsetIterable;
 
-public class PhotoSpreadDoubleConstant extends PhotoSpreadConstant 
-implements FunctionResultable {
+public class PhotoSpreadDoubleConstant extends PhotoSpreadConstant implements Comparable<PhotoSpreadDoubleConstant>,
+																			  FunctionResultable {
 	
 	
 	Double _number = 0.0;
@@ -30,6 +30,9 @@ implements FunctionResultable {
 	 * Methods
 	 *****************************************************/
 
+    public int compareTo(PhotoSpreadDoubleConstant doubleConst) {
+    	return _number.compareTo(doubleConst._number); 
+    }
 	
 	public String toString () {
 		return "<PhotoSpreadDoubleConstant (" + _number + ")>";

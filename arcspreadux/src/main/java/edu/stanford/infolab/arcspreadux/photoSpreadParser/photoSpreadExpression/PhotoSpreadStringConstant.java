@@ -6,7 +6,7 @@ import edu.stanford.infolab.arcspreadux.photoSpreadTable.PhotoSpreadCell;
 import edu.stanford.infolab.arcspreadux.photoSpreadUtilities.PhotoSpreadObjIndexerFinder;
 import edu.stanford.infolab.arcspreadux.photoSpreadUtilities.TreeSetRandomSubsetIterable;
 
-public class PhotoSpreadStringConstant extends PhotoSpreadConstant {
+public class PhotoSpreadStringConstant extends PhotoSpreadConstant implements Comparable<PhotoSpreadStringConstant>{
 	
 	String _str = "";
 	
@@ -14,6 +14,10 @@ public class PhotoSpreadStringConstant extends PhotoSpreadConstant {
 		_str = str;
 		_cell = cell;
 	}
+	
+    public int compareTo(PhotoSpreadStringConstant strConst) {
+    	return _str.compareTo(strConst._str); 
+    }
 	
 	public String toString () {
 		return "<PhotoSpreadStringConstant '" + _str + "'>";
@@ -35,4 +39,5 @@ public class PhotoSpreadStringConstant extends PhotoSpreadConstant {
 	public String valueOf () {
 		return _str;
 	}
+
 }

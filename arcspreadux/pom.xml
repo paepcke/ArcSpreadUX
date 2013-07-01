@@ -36,5 +36,15 @@
       <artifactId>commons-collections</artifactId>
       <version>3.2.1</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.pig</groupId>
+      <artifactId>pig</artifactId>
+      <version> 0.10.0-cdh4.1.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.pig</groupId>
+      <artifactId>piggybank</artifactId>
+      <version>0.10.0-cdh4.1.2</version>
+    </dependency>
   </dependencies>
 </project>

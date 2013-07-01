@@ -70,7 +70,11 @@ public class PhotoSpreadDoubleObject extends PhotoSpreadObject {
 	
 	@Override
 	public <T extends Object>  boolean contentEquals (T num) {
-		return (_value == (Double) num);
+		try {
+			return (_value == (Double) num);
+		} catch (Exception e) {
+			return false;
+		}
 	}
 	
 	@SuppressWarnings("unchecked")

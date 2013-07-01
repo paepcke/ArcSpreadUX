@@ -44,7 +44,7 @@ public class PhotoSpreadConstantExpression extends PhotoSpreadFormulaExpression 
         res.setIndexer(new PhotoSpreadObjIndexerFinder());
         
         //If expression is empty, do not add objects
-        if(_constants.size()==1&&_constants.first().getObject().contentEquals("")) return res;
+        if(_constants.size()==1 && _constants.first().getObject().contentEquals("")) return res;
         
         for (PhotoSpreadConstant psConstant : _constants) {
         	res.addAll(psConstant.getObjects(), cell.getObjects());
@@ -52,7 +52,7 @@ public class PhotoSpreadConstantExpression extends PhotoSpreadFormulaExpression 
 
         return res;
     }
-
+    
     @Override
     public String toString() {
         // return _constants.toString();

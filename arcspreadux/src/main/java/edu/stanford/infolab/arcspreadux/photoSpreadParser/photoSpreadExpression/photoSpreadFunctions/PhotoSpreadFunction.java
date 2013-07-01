@@ -154,7 +154,7 @@ implements PhotoSpreadComputable {
 
 
 			String fullyQualifiedFuncName = 
-				"photoSpreadParser.photoSpreadExpression.photoSpreadFunctions." +
+				"edu.stanford.infolab.arcspreadux.photoSpreadParser.photoSpreadExpression.photoSpreadFunctions." +
 				funcNameCapped; 
 			
 			Class<? extends PhotoSpreadFunction> functionClass  = 
