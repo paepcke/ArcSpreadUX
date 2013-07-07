@@ -20,18 +20,7 @@
  */
 package edu.stanford.infolab.arcspreadux.inputOutput;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringReader;
-import java.nio.charset.Charset;
-import java.text.NumberFormat;
-import java.util.HashMap;
+import java.io.BufferedReader;import java.io.File;import java.io.FileInputStream;import java.io.FileNotFoundException;import java.io.IOException;import java.io.InputStream;import java.io.InputStreamReader;import java.io.Reader;import java.io.StringReader;import java.nio.charset.Charset;import java.text.NumberFormat;import java.util.HashMap;
 
 /**
  * A stream based parser for parsing delimited text data from a file or a

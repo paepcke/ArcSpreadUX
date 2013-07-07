@@ -2,7 +2,6 @@
 package edu.stanford.infolab.arcspreadux.photoSpreadParser;
 import java.io.StringReader;
 
-import edu.stanford.infolab.arcspreadux.photoSpreadParser.TokenMgrError;
 import edu.stanford.infolab.arcspreadux.photoSpreadParser.photoSpreadExpression.PhotoSpreadCellRange;
 import edu.stanford.infolab.arcspreadux.photoSpreadParser.photoSpreadExpression.PhotoSpreadCellRangeCondition;
 import edu.stanford.infolab.arcspreadux.photoSpreadParser.photoSpreadExpression.PhotoSpreadCondition;
