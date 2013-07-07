@@ -8,16 +8,13 @@ package edu.stanford.arcspreadux.hadoop;
  *
  */
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.Properties;
-import java.util.Set;
 
 import org.apache.pig.ExecType;
 import org.apache.pig.PigServer;
@@ -35,6 +32,14 @@ public class PigScriptRunner {
 	InputStream scriptInStream = null;
 
 	public PigScriptRunner(File theScriptFile, String theVarToPrintOrIterate) throws FileNotFoundException {
+		if (theScriptFile == null) {
+			throw new IllegalArgumentException("Script file must be provided; null was passed instead.");
+		}
+		
+		if (theVarToPrintOrIterate == null) {
+			throw new IllegalArgumentException("Script variable to print or iterate over must be provided; null was passed instead.");
+		}
+		
 		scriptFile = theScriptFile;
 		scriptInStream = new FileInputStream(theScriptFile);		
 		pigVar = theVarToPrintOrIterate;
@@ -42,6 +47,18 @@ public class PigScriptRunner {
 	}
 	
 	public PigScriptRunner(File theScriptFile, String theOutfile, String varToStore) throws FileNotFoundException {
+		if (theScriptFile == null) {
+			throw new IllegalArgumentException("Script file must be provided; null was passed instead.");
+		}
+		
+		if (varToStore == null) {
+			throw new IllegalArgumentException("Script variable to store must be provided; null was passed instead.");
+		}
+		
+		if (theOutfile == null) {
+			throw new IllegalArgumentException("Output file name must be provided; null was passed instead.");
+		}
+		
 		scriptFile = theScriptFile;
 		scriptInStream = new FileInputStream(theScriptFile);
 		outFilePath = theOutfile;
@@ -50,6 +67,18 @@ public class PigScriptRunner {
 	}
 
 	public PigScriptRunner(InputStream theScriptStream, String theOutfile, String varToStore) {
+		if (theScriptStream== null) {
+			throw new IllegalArgumentException("Script stream must be provided; null was passed instead.");
+		}
+		
+		if (varToStore == null) {
+			throw new IllegalArgumentException("Script variable to store must be provided; null was passed instead.");
+		}
+		
+		if (theOutfile == null) {
+			throw new IllegalArgumentException("Output file name must be provided; null was passed instead.");
+		}
+		
 		scriptInStream = theScriptStream;
 		outFilePath = theOutfile;
 		pigVar  = varToStore;
@@ -75,17 +104,22 @@ public class PigScriptRunner {
 	
 	public void store() throws IOException {
 		startServer();
+		pserver.registerScript(scriptInStream);
 		pserver.store(pigVar, outFilePath);
-		//**************
-		Set<String> aliasSet = pserver.getAliasKeySet();
-		for (String el : aliasSet) {
-			System.out.println(el);
-		}
-		//**************		
 	}
 	
-	public void run() {
+	public void run() throws IOException {
 		startServer();
+		PigScriptReader scriptReader;
+		if (scriptFile != null) {
+			scriptReader = new PigScriptReader(scriptFile);
+		} else {
+			scriptReader = new PigScriptReader(scriptInStream);
+		}
+		while (scriptReader.hasNext()) {
+			String scriptCodeLine = scriptReader.next();
+			pserver.registerQuery(scriptCodeLine);
+		}
 	}
 	
 	private void initPig() {

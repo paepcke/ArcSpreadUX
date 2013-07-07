@@ -1,9 +1,12 @@
 package edu.stanford.arcspreadux.hadoop;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Iterator;
 
 import org.apache.commons.lang.NotImplementedException;
@@ -17,6 +20,14 @@ public class PigScriptReader implements Iterator<String> {
 		reader = new BufferedReader(new FileReader(pathName));
 	}
 
+	public PigScriptReader(File scriptFile) throws FileNotFoundException {
+		this(scriptFile.getAbsolutePath());
+	}
+	
+	public PigScriptReader(InputStream scriptStream) throws FileNotFoundException {
+		reader = new BufferedReader(new InputStreamReader(scriptStream));
+	}
+	
 	public boolean hasNext() {
 		try {
 			return reader.ready();

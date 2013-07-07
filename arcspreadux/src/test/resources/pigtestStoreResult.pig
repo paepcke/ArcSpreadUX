@@ -20,4 +20,4 @@ grpd  = group words by word;
 theCount  = foreach grpd generate group, COUNT(words);
 -- Print out the results
 -- DUMP theCount;
-STORE theCount INTO '/home/paepcke/tmp/maryTest.txt';
+STORE theCount INTO '/tmp/pigtestResult007.txt';
