@@ -52,16 +52,20 @@ public class TestPigScriptRunner {
 
 	@Test
 	public void testSimpleScriptIteration() throws IOException {
-		PigScriptRunner runner = new PigScriptRunner(scriptFileNoStore, "theCount");		
-		Iterator<Tuple> resultIt = runner.iterator();
-		for (String expectedLine : trueResult) {
-			if (! resultIt.hasNext()) {
-				fail("Result does not include line '" + expectedLine + "'.");
+		PigScriptRunner runner = new PigScriptRunner(scriptFileNoStore, "theCount");
+		try {
+			Iterator<Tuple> resultIt = runner.iterator();
+			for (String expectedLine : trueResult) {
+				if (! resultIt.hasNext()) {
+					fail("Result does not include line '" + expectedLine + "'.");
+				}
+				String[] wordAndFreq = expectedLine.split("\\s");
+				Tuple actualTuple = resultIt.next();
+				assertEquals(wordAndFreq[0], actualTuple.get(0));
+				assertEquals(wordAndFreq[1], actualTuple.get(1).toString());
 			}
-			String[] wordAndFreq = expectedLine.split("\\s");
-			Tuple actualTuple = resultIt.next();
-			assertEquals(wordAndFreq[0], actualTuple.get(0));
-			assertEquals(wordAndFreq[1], actualTuple.get(1).toString());
+		} finally {
+			runner.shutdown();
 		}
 	}
 	
@@ -69,8 +73,12 @@ public class TestPigScriptRunner {
 	public void testScriptRun() throws IOException {
 		FileUtils.deleteQuietly(new File(resultFile));
 		PigScriptRunner runner = new PigScriptRunner(scriptFileDoStore, "theCount");
-		runner.run();
-		ensureFileAsExpected();
+		try {
+			runner.run();
+			ensureFileAsExpected();
+		} finally {
+			runner.shutdown();
+		}
 	}
 	
 	private void ensureFileAsExpected() throws IOException {

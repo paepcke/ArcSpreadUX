@@ -122,6 +122,12 @@ public class PigScriptRunner {
 		}
 	}
 	
+	public void shutdown() {
+		if (pserver != null) {
+			pserver.shutdown();
+		}
+	}
+	
 	private void initPig() {
 		props.setProperty("pig.usenewlogicalplan", "false");
 		props.setProperty("pig.temp.dir","/user/paepcke");
