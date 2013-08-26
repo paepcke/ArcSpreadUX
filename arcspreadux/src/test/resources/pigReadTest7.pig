@@ -1,2 +1,0 @@
-STORE foo;/* Foo */
-

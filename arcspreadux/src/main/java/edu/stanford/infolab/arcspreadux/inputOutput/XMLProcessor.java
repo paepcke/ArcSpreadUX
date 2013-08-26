@@ -30,7 +30,7 @@ import edu.stanford.infolab.arcspreadux.photoSpreadUtilities.Const;
  * 
  * @author skandel
  */
-@SuppressWarnings("restriction")
+
 public class XMLProcessor {
 
 	/**

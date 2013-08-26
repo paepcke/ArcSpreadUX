@@ -1,6 +1,6 @@
 package edu.stanford.infolab.arcspreadux.hadoop;
 
-import java.net.InetAddress;
+/*import java.net.InetAddress;
 import java.util.concurrent.Callable;
 
 import org.gridkit.nanocloud.CloudFactory;
@@ -25,4 +25,4 @@ public class testRemoteExec {
 		); // Console output is transfered asynchronously, // so it is better to wait few seconds for it to arrive 
 		Thread.sleep(1000); 
 	}	
-}
+}*/
