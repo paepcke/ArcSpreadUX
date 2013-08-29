@@ -1,0 +1,5 @@
+Adding a new function
+---------------------
+
+- in PhotoSpreadParser.jj: add func name and entity name and string function name
+

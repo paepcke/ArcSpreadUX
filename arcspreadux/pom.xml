@@ -88,5 +88,26 @@
       <artifactId>kryo</artifactId>
       <version>2.10</version>
     </dependency>
+    <dependency>
+      <groupId>org.mongodb</groupId>
+      <artifactId>mongo-java-driver</artifactId>
+      <version>2.10.1</version>
+    </dependency>  
+
+    <!-- The following dependencies are for unit testing only -->
+    <dependency>
+      <groupId>com.foursquare</groupId>
+      <artifactId>fongo</artifactId>
+      <version>1.2.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>1.7.5</version>
+      <scope>test</scope>
+    </dependency>
+            
   </dependencies>
+
 </project>

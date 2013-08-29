@@ -23,7 +23,7 @@ import edu.stanford.infolab.arcspreadux.photoSpreadUtilities.UUID.FileHashMethod
  *
  * @author skandel
  */
-public class PhotoSpreadImage extends PhotoSpreadFileObject {
+public class PhotoSpreadComputeResultObject extends PhotoSpreadFileObject {
 
 	private PhotoSpreadImageLoader _pil;
 
@@ -34,14 +34,14 @@ public class PhotoSpreadImage extends PhotoSpreadFileObject {
 	 * @throws FileNotFoundException 
 	 *****************************************************/
 
-	public PhotoSpreadImage(PhotoSpreadCell _cell, String _filePath) 
+	public PhotoSpreadComputeResultObject(PhotoSpreadCell _cell, String _filePath) 
 	throws FileNotFoundException, IOException {
 		super(_cell, _filePath, new UUID(new File(_filePath), FileHashMethod.USE_FILE_SAMPLING));
 
 		_pil = new PhotoSpreadImageLoader();
 	}
 
-	public PhotoSpreadImage(PhotoSpreadCell _cell, UUID _objectId, String _filePath) {
+	public PhotoSpreadComputeResultObject(PhotoSpreadCell _cell, UUID _objectId, String _filePath) {
 		super(_cell, _filePath, _objectId);
 
 		_pil = new PhotoSpreadImageLoader();
@@ -55,7 +55,7 @@ public class PhotoSpreadImage extends PhotoSpreadFileObject {
 	 * @param _dbName
 	 * @throws BadUUIDStringError
 	 */
-	public PhotoSpreadImage(PhotoSpreadCell _cell, String objectIdStr, String _filePath) 
+	public PhotoSpreadComputeResultObject(PhotoSpreadCell _cell, String objectIdStr, String _filePath) 
 	throws BadUUIDStringError {
 		super(_cell, _filePath, UUID.createFromUUIDString(objectIdStr));
 
@@ -82,8 +82,8 @@ public class PhotoSpreadImage extends PhotoSpreadFileObject {
 	
 	@SuppressWarnings("unchecked")
 	@Override
-	public PhotoSpreadImage copyObject() {
-		return new PhotoSpreadImage(_cell, getObjectID(), _filePath);
+	public PhotoSpreadComputeResultObject copyObject() {
+		return new PhotoSpreadComputeResultObject(_cell, getObjectID(), _filePath);
 	}
 	
 }

@@ -37,7 +37,7 @@ FunctionResultable, PhotoSpreadComputable {
 	private UUID _objectId;
 	private TreeMap<String, String> _metadata;
 	protected PhotoSpreadCell _cell;
-	public static String FILEPATH_ARG = "_filePath";
+	public static String FILEPATH_ARG = "_dbName";
 
 	/****************************************************
 	 * Constructor(s)
