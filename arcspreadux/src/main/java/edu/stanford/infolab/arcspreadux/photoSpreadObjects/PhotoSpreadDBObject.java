@@ -5,8 +5,6 @@
 
 package edu.stanford.infolab.arcspreadux.photoSpreadObjects;
 
-import java.io.File;
-
 import edu.stanford.infolab.arcspreadux.inputOutput.XMLProcessor;
 import edu.stanford.infolab.arcspreadux.photoSpreadTable.PhotoSpreadCell;
 import edu.stanford.infolab.arcspreadux.photoSpreadUtilities.Const;
@@ -15,7 +13,7 @@ import edu.stanford.infolab.arcspreadux.photoSpreadUtilities.UUID;
 
 /**
  *
- * @author skandel
+ * @author paepcke
  */
 abstract public class PhotoSpreadDBObject extends PhotoSpreadObject {
     

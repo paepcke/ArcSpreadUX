@@ -187,6 +187,13 @@ public abstract class PhotoSpreadException extends Exception {
 			super(msg);
 		}
 	}
+		
+	@SuppressWarnings("serial")
+	public static class DatabaseProblem extends PhotoSpreadException {
+		public DatabaseProblem (String msg) {
+			super(msg);
+		}
+	}
 	
 	/****************************************************
 	 * Methods for PhotoSpreadException Subclasses

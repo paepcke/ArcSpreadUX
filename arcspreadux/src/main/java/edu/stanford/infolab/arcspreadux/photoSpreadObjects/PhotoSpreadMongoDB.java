@@ -6,13 +6,22 @@ package edu.stanford.infolab.arcspreadux.photoSpreadObjects;
 import java.awt.Component;
 import java.net.UnknownHostException;
 import java.security.AccessControlException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
+
+import com.mongodb.BasicDBObject;
+import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DB;
+import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
+import com.mongodb.WriteConcern;
 
 import edu.stanford.infolab.arcspreadux.photoSpread.PhotoSpreadException.CannotLoadImage;
+import edu.stanford.infolab.arcspreadux.photoSpread.PhotoSpreadException.DatabaseProblem;
 import edu.stanford.infolab.arcspreadux.photoSpreadTable.PhotoSpreadCell;
 import edu.stanford.infolab.arcspreadux.photoSpreadTable.PhotoSpreadTableModel;
 import edu.stanford.infolab.arcspreadux.photoSpreadUtilities.UUID;
@@ -32,6 +41,7 @@ public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 	String pwd = "";
 	DB db = null;
 	boolean auth = false;
+	WriteConcern currWriteConcern = WriteConcern.ACKNOWLEDGED; // the default anyway
 	
 	/****************************************************
 	 * Constructor(s)
@@ -95,7 +105,22 @@ public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 	
 	/****************************************************
 	 * Public Methods
+	 * @throws DatabaseProblem 
 	 *****************************************************/
+
+	public void insert(String jsonStr) throws DatabaseProblem {
+		JSONObject jObj;
+		try {
+			jObj = new JSONObject(jsonStr);
+		} catch (JSONException e) {
+			throw new DatabaseProblem("Could not parse JSON string: " + e.getMessage());
+		}
+		insert(jObj);
+	}
+	
+	public void insert(JSONObject jObj) {
+		jsonToDBObject(jObj);
+	}
 	
 	public List<String> getDatabaseNames() {
 		return mongoClient.getDatabaseNames();
@@ -152,4 +177,41 @@ public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 	public void setDB(DB theDbObj) {
 		db = theDbObj;
 	}
+	
+	/****************************************************
+	 * Private Methods (declared public only for unit tests
+	 *****************************************************/
+	
+	public DBObject jsonToDBObject(JSONObject jObj) {
+		BasicDBObjectBuilder res = BasicDBObjectBuilder.start();
+		res = jsonToDBObjectHelper(res, jObj);
+		return res.get();
+	}
+	
+	@SuppressWarnings("unchecked")
+	private BasicDBObjectBuilder jsonToDBObjectHelper(BasicDBObjectBuilder builder, JSONObject jObj) {
+		
+		Iterator<String> jsonIt = jObj.keys();
+		String jKey = null;
+		while (jsonIt.hasNext()) {
+			try {
+				// Assume that value is a nested JSON object; if
+				// exception, value is a primitive:
+				jKey = jsonIt.next();
+				JSONObject val = jObj.getJSONObject(jKey);
+				builder.add(jKey, jsonToDBObjectHelper(builder, val).get());
+				continue;
+			} catch (JSONException e) {
+				try {
+					builder.add(jKey, jObj.get(jKey));
+					continue;
+				} catch (JSONException e1) {
+					// the jObj.get() should succeed, if not, debug:
+					e1.printStackTrace();
+				}
+			}
+		}
+		return builder;
+	}
+	
 }

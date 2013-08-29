@@ -1,14 +1,17 @@
 package edu.stanford.infolab.arcspreadux.hadoop;
 
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.foursquare.fongo.Fongo;
@@ -67,10 +70,12 @@ public class TestMangoDB {
 	 *****************************************************/
 	
 	@Test
-	public void test() {
+	@Ignore
+	public void testBasics() {
 		//System.out.println(mongoDB.getDatabaseNames());
 		List<String> dbNames = mongoDB.getDatabaseNames();
-		assertTrue(dbNames.contains("admin") && dbNames.contains("local"));
+		//assertTrue(dbNames.contains("admin") && dbNames.contains("local"));
+		assertTrue(dbNames.contains("local"));
 		
 		DBCollection coll = db.getCollection("testColl");
 		coll.insert(new BasicDBObject("author", "thimblethorpe"));
@@ -91,9 +96,27 @@ public class TestMangoDB {
 		
 		query = new BasicDBObject();
 		query.put("author", "thimblethorpe");
-		DBCursor cursor = coll.find(query);
+		cursor = coll.find(query);
+		// **** add assertion
+	}
+	
+	@Test
+	@Ignore
+	public void testJSONToDBObjSimple() throws JSONException {
+		JSONObject jObj = new JSONObject("{\"person\" : \"gaulle\"}");
+		DBObject dbObj = mongoDB.jsonToDBObject(jObj);
+		assertEquals("gaulle", dbObj.get("person"));
+	}
 		
-		
+	@Test
+	public void testJSONToDBObjNested() throws JSONException {
+		JSONObject jObj = new JSONObject();
+		JSONObject pJObj = new JSONObject();
+		pJObj.put("name", "gaulle");
+		pJObj.put("dob", "10.11.2004");
+		jObj.put("person", pJObj);
+		DBObject dbObj = mongoDB.jsonToDBObject(jObj);
+		System.out.println(dbObj);
 	}
 
 }
