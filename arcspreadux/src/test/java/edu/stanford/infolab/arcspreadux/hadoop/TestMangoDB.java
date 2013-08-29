@@ -109,12 +109,25 @@ public class TestMangoDB {
 	}
 		
 	@Test
+	@Ignore
 	public void testJSONToDBObjNested() throws JSONException {
 		JSONObject jObj = new JSONObject();
 		JSONObject pJObj = new JSONObject();
 		pJObj.put("name", "gaulle");
 		pJObj.put("dob", "10.11.2004");
 		jObj.put("person", pJObj);
+		DBObject dbObj = mongoDB.jsonToDBObject(jObj);
+		BasicDBObject subObj = (BasicDBObject) dbObj.get("person"); 
+		assertEquals(subObj.get("name"), "gaulle");
+		assertEquals(subObj.get("dob"), "10.11.2004");
+	}
+	
+	@Test
+	public void testJSONToDBObjArray() throws JSONException {
+		JSONObject jObj = new JSONObject();
+		jObj.accumulate("testArr", "green");
+		jObj.accumulate("testArr", "blue");
+		jObj.accumulate("testArr", "yellow");
 		DBObject dbObj = mongoDB.jsonToDBObject(jObj);
 		System.out.println(dbObj);
 	}

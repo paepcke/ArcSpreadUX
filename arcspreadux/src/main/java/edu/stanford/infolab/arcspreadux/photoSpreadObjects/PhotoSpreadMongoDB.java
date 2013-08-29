@@ -14,7 +14,6 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 import com.mongodb.BasicDBObject;
-import com.mongodb.BasicDBObjectBuilder;
 import com.mongodb.DB;
 import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
@@ -183,13 +182,13 @@ public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 	 *****************************************************/
 	
 	public DBObject jsonToDBObject(JSONObject jObj) {
-		BasicDBObjectBuilder res = BasicDBObjectBuilder.start();
-		res = jsonToDBObjectHelper(res, jObj);
-		return res.get();
+		BasicDBObject dbObj = new BasicDBObject();
+		dbObj = jsonToDBObjectHelper(dbObj, jObj);
+		return dbObj;
 	}
 	
 	@SuppressWarnings("unchecked")
-	private BasicDBObjectBuilder jsonToDBObjectHelper(BasicDBObjectBuilder builder, JSONObject jObj) {
+	private BasicDBObject jsonToDBObjectHelper(BasicDBObject dbObj, JSONObject jObj) {
 		
 		Iterator<String> jsonIt = jObj.keys();
 		String jKey = null;
@@ -199,11 +198,11 @@ public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 				// exception, value is a primitive:
 				jKey = jsonIt.next();
 				JSONObject val = jObj.getJSONObject(jKey);
-				builder.add(jKey, jsonToDBObjectHelper(builder, val).get());
+				dbObj.append(jKey, jsonToDBObjectHelper(new BasicDBObject(), val));
 				continue;
 			} catch (JSONException e) {
 				try {
-					builder.add(jKey, jObj.get(jKey));
+					dbObj.append(jKey, jObj.get(jKey));
 					continue;
 				} catch (JSONException e1) {
 					// the jObj.get() should succeed, if not, debug:
@@ -211,7 +210,7 @@ public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 				}
 			}
 		}
-		return builder;
+		return dbObj;
 	}
 	
 }
