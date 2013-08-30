@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
+import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
@@ -201,13 +202,21 @@ public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 				dbObj.append(jKey, jsonToDBObjectHelper(new BasicDBObject(), val));
 				continue;
 			} catch (JSONException e) {
-				try {
-					dbObj.append(jKey, jObj.get(jKey));
-					continue;
-				} catch (JSONException e1) {
-					// the jObj.get() should succeed, if not, debug:
-					e1.printStackTrace();
-				}
+				// Was not a JSONObject. How about an array?
+				JSONArray jArr = jObj.getJSONArray(jKey);
+				// If we didn't bomb, we in fact have an array:
+				BasicDBObject dbArrObj = new BasicDBObject();
+				for (int i=0; i<jArr.length(); i++) {
+					try {
+						dbArrObj.append(jKey, jArr.get(i));
+					} catch (JSONException e1) {
+						try {
+							dbObj.append(jKey, jObj.get(jKey));
+							continue;
+						} catch (JSONException e2) {
+							// the jObj.get() should succeed, if not, debug:
+							e1.printStackTrace();
+					}
 			}
 		}
 		return dbObj;
