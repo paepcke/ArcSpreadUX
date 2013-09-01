@@ -68,6 +68,9 @@ public class TestMangoDB {
 	
 	@Test
 	public void test() {
+		
+		DBCursor cursor = null;
+		
 		//System.out.println(mongoDB.getDatabaseNames());
 		List<String> dbNames = mongoDB.getDatabaseNames();
 		assertTrue(dbNames.contains("admin") && dbNames.contains("local"));
@@ -77,7 +80,7 @@ public class TestMangoDB {
 		
 		BasicDBObject query = new BasicDBObject();
 		query.put("author", "thimblethorpe");
-		DBCursor cursor = coll.find(query);
+		cursor = coll.find(query);
 		assertTrue(cursor.hasNext());
 		DBObject res = cursor.next();
 		assertEquals(res.get("author"), "thimblethorpe");
@@ -91,9 +94,11 @@ public class TestMangoDB {
 		
 		query = new BasicDBObject();
 		query.put("author", "thimblethorpe");
-		DBCursor cursor = coll.find(query);
-		
-		
+		cursor = coll.find(query);
+		while (cursor.hasNext()) {
+			// Returns: { "author" : "thimblethorpe" , "_id" : { "$oid" : "52226484e4b012688aeadfb1"}}
+			DBObject resObj = cursor.next();
+			assertEquals("thimblethorpe", resObj.get("author"));
+		}
 	}
-
 }
