@@ -5,7 +5,7 @@
 
 package edu.stanford.infolab.arcspreadux.photoSpreadObjects;
 
-import java.io.File;
+import org.apache.log4j.Logger;
 
 import edu.stanford.infolab.arcspreadux.inputOutput.XMLProcessor;
 import edu.stanford.infolab.arcspreadux.photoSpreadTable.PhotoSpreadCell;
@@ -15,10 +15,12 @@ import edu.stanford.infolab.arcspreadux.photoSpreadUtilities.UUID;
 
 /**
  *
- * @author skandel
+ * @author paepcke
  */
 abstract public class PhotoSpreadDBObject extends PhotoSpreadObject {
     
+	protected static Logger logger = Logger.getLogger("dbs"); 
+	
     String _dbName = "";
     String _host = "";
     int _port = -1;

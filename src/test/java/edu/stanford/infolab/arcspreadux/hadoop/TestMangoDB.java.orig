@@ -1,14 +1,17 @@
 package edu.stanford.infolab.arcspreadux.hadoop;
 
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.foursquare.fongo.Fongo;
@@ -67,13 +70,19 @@ public class TestMangoDB {
 	 *****************************************************/
 	
 	@Test
+<<<<<<< HEAD
 	public void test() {
 		
 		DBCursor cursor = null;
 		
+=======
+	@Ignore
+	public void testBasics() {
+>>>>>>> 1fa16ec68117ff34c18c2ce339f27fbf255961a1
 		//System.out.println(mongoDB.getDatabaseNames());
 		List<String> dbNames = mongoDB.getDatabaseNames();
-		assertTrue(dbNames.contains("admin") && dbNames.contains("local"));
+		//assertTrue(dbNames.contains("admin") && dbNames.contains("local"));
+		assertTrue(dbNames.contains("local"));
 		
 		DBCollection coll = db.getCollection("testColl");
 		coll.insert(new BasicDBObject("author", "thimblethorpe"));
@@ -95,10 +104,46 @@ public class TestMangoDB {
 		query = new BasicDBObject();
 		query.put("author", "thimblethorpe");
 		cursor = coll.find(query);
+<<<<<<< HEAD
 		while (cursor.hasNext()) {
 			// Returns: { "author" : "thimblethorpe" , "_id" : { "$oid" : "52226484e4b012688aeadfb1"}}
 			DBObject resObj = cursor.next();
 			assertEquals("thimblethorpe", resObj.get("author"));
 		}
+=======
+		// **** add assertion
+	}
+	
+	@Test
+	@Ignore
+	public void testJSONToDBObjSimple() throws JSONException {
+		JSONObject jObj = new JSONObject("{\"person\" : \"gaulle\"}");
+		DBObject dbObj = mongoDB.jsonToDBObject(jObj);
+		assertEquals("gaulle", dbObj.get("person"));
+	}
+		
+	@Test
+	@Ignore
+	public void testJSONToDBObjNested() throws JSONException {
+		JSONObject jObj = new JSONObject();
+		JSONObject pJObj = new JSONObject();
+		pJObj.put("name", "gaulle");
+		pJObj.put("dob", "10.11.2004");
+		jObj.put("person", pJObj);
+		DBObject dbObj = mongoDB.jsonToDBObject(jObj);
+		BasicDBObject subObj = (BasicDBObject) dbObj.get("person"); 
+		assertEquals(subObj.get("name"), "gaulle");
+		assertEquals(subObj.get("dob"), "10.11.2004");
+	}
+	
+	@Test
+	public void testJSONToDBObjArray() throws JSONException {
+		JSONObject jObj = new JSONObject();
+		jObj.accumulate("testArr", "green");
+		jObj.accumulate("testArr", "blue");
+		jObj.accumulate("testArr", "yellow");
+		DBObject dbObj = mongoDB.jsonToDBObject(jObj);
+		System.out.println(dbObj);
+>>>>>>> 1fa16ec68117ff34c18c2ce339f27fbf255961a1
 	}
 }
