@@ -3,6 +3,8 @@ package edu.stanford.infolab.arcspreadux.hadoop;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 import org.codehaus.jettison.json.JSONException;
@@ -21,7 +23,6 @@ import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
-import com.mongodb.MongoClient;
 import com.mongodb.QueryBuilder;
 
 import edu.stanford.infolab.arcspreadux.photoSpread.PhotoSpread;
@@ -177,8 +178,8 @@ public class TestMangoDB {
 	
 	/*
 	 * Querying DOES NOT WORK with the in-memory fongoDb we
-	 * use here. So this method, while correct, won't find 
-	 * any results.
+	 * use here. At least not for this test method. So this 
+	 * method, while correct, won't find any results.
 	 */
 	@Test
 	@Ignore
@@ -205,6 +206,31 @@ public class TestMangoDB {
 		DBCursor cursor = db.getCollection("testColl").find(qObj);
 		System.out.println(String.format("Cursor count: %d", cursor.count()));
 		printResults(cursor);
+	}
+	
+	@Test
+	public void testHealthyCSVWithColHeadersImport() throws DatabaseProblem, IOException {
+		mongoDB.useCollection("csvTest");
+		File csvFile = new File("src/test/resources/csvWithColHeaders.csv");
+		mongoDB.importCSV(csvFile, ",", PhotoSpreadMongoDB.CSVColHeaderInfo.HAS_COL_HEADERS);
+		
+		QueryBuilder qBuilder = QueryBuilder.start();
+		qBuilder.put("myCol");
+		qBuilder.is("4");
+		DBObject qObj = qBuilder.get();
+		DBCursor cursor = mongoDB.query(qObj);
+		assertEquals(1, cursor.count());
+		DBObject resObj = cursor.next();
+		assertEquals("4", resObj.get("myCol"));
+		
+		qBuilder = QueryBuilder.start();
+		qBuilder.put("herCol");
+		qBuilder.is("herColFld");
+		qObj = qBuilder.get();
+		cursor = mongoDB.query(qObj);
+		resObj = cursor.next();
+		assertEquals("herColFld", resObj.get("herCol"));
+
 	}
 	
 	// ----------------------  Utilities --------------------------

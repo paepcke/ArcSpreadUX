@@ -41,6 +41,11 @@ import edu.stanford.infolab.arcspreadux.photoSpreadUtilities.UUID;
  */
 public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 
+	public enum CSVColHeaderInfo {
+		HAS_COL_HEADERS,
+		NO_COL_HEADERS;
+	}
+
 	private static Random randGen = new Random();
 	private static int MONGO_DEFAULT_PORT = 27017;
 	
@@ -147,8 +152,11 @@ public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 	 *
 	 * @param query
 	 * @return
+	 * @throws DatabaseProblem 
 	 */
-	public DBCursor query(DBObject query) {
+	public DBCursor query(DBObject query) throws DatabaseProblem {
+		if (currColl == null)
+			throwUnspecifiedCollection();
 		return currColl.find(query);
 	}
 	
@@ -161,8 +169,11 @@ public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 	 * @param query Query object, built manually or using QueryBuilder
 	 * @param numResults limit of number of results. -1: get all
 	 * @return List of result objects
+	 * @throws DatabaseProblem 
 	 */
-	public List<Object> query(DBObject query, int numResults) {
+	public List<Object> query(DBObject query, int numResults) throws DatabaseProblem {
+		if (currColl == null)
+			throwUnspecifiedCollection();
 		List<Object> res = new ArrayList<Object>();
 		if (numResults == 1) {
 			res.add(currColl.findOne());
@@ -193,6 +204,8 @@ public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 	 * @throws DatabaseProblem
 	 */
 	public void insert(String jsonStr) throws DatabaseProblem {
+		if (currColl == null)
+			throwUnspecifiedCollection();
 		insert(currColl, jsonStr);
 	}
 	
@@ -258,17 +271,17 @@ public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 	* importCSV() 
 	*------------------*/
 	
-	public void importCSV(File csvFile, String fldSep, boolean firstLineHasColNames) throws IOException, DatabaseProblem {
+	public void importCSV(File csvFile, String fldSep, CSVColHeaderInfo firstLineHasColNames) throws IOException, DatabaseProblem {
 		LineIterator lineIt = FileUtils.lineIterator(csvFile);
 		if (! lineIt.hasNext()) {
-			if (! firstLineHasColNames)
+			if (firstLineHasColNames == CSVColHeaderInfo.NO_COL_HEADERS)
 				return; // No col headers promised, just return: all done
 			else
 				throw new IOException("CSV file is empty, but caller claimed first line had column headings: " + csvFile.getAbsolutePath());
 		}
 		String firstLine = lineIt.next();
 		String[] maybeColNames = firstLine.split(fldSep);
-		if (firstLineHasColNames) {
+		if (firstLineHasColNames == CSVColHeaderInfo.HAS_COL_HEADERS) {
 			importCSV(lineIt, fldSep, maybeColNames);
 			LineIterator.closeQuietly(lineIt);
 			return;
@@ -391,8 +404,16 @@ public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 	}
 	
 	/****************************************************
-	 * Private Methods (declared public only for unit tests
+	 * Private Methods (some declared public only for unit tests
+	 * @return 
+	 * @throws DatabaseProblem 
 	 *****************************************************/
+	
+	private void throwUnspecifiedCollection() throws DatabaseProblem {
+		throw new DatabaseProblem(
+				String.format("No collection was designated as default in database '%s'. Call useCollection() to fix",
+						db.getName()));
+	}
 	
 	/**
 	 * Convert a JSON object into a MongoDB object
