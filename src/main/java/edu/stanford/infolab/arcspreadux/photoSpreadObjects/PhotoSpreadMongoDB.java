@@ -15,6 +15,7 @@ import java.util.Random;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.LineIterator;
+import org.apache.commons.lang.NotImplementedException;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -29,7 +30,6 @@ import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.WriteConcern;
 
-import edu.stanford.infolab.arcspreadux.photoSpread.PhotoSpreadException.CannotLoadImage;
 import edu.stanford.infolab.arcspreadux.photoSpread.PhotoSpreadException.DatabaseProblem;
 import edu.stanford.infolab.arcspreadux.photoSpreadTable.PhotoSpreadCell;
 import edu.stanford.infolab.arcspreadux.photoSpreadTable.PhotoSpreadTableModel;
@@ -45,6 +45,12 @@ public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 		HAS_COL_HEADERS,
 		NO_COL_HEADERS;
 	}
+	
+	public enum CSVStrictness {
+		LAX,
+		MISSING_COLS_OK,
+		VALUES_MUST_MATCH_COLS
+	}
 
 	private static Random randGen = new Random();
 	private static int MONGO_DEFAULT_PORT = 27017;
@@ -57,6 +63,11 @@ public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 	DBCollection currColl = null;
 	boolean auth = false;
 	WriteConcern currWriteConcern = WriteConcern.ACKNOWLEDGED; // the default anyway
+	
+	// Should CSV import insist on having as many fields
+	// in each row as there are column names? If yes
+	CSVStrictness importStrictness = CSVStrictness.MISSING_COLS_OK;
+	
 	
 	/****************************************************
 	 * Constructor(s)
@@ -134,9 +145,20 @@ public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 	
 	/****************************************************
 	 * Public Methods
+	 * @throws JSONException 
 	 * @throws DatabaseProblem 
 	 *****************************************************/
-
+	
+	/*---------------------------
+	* query()
+	*------------------*/
+	
+	public DBCursor query(String jsonStr) throws JSONException, DatabaseProblem {
+		JSONObject jObj = new JSONObject(jsonStr);
+		DBObject dbObj = jsonToDBObject(jObj);
+		return query(dbObj);
+	}
+	
 	
 	/*---------------------------
 	* query()
@@ -193,7 +215,7 @@ public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 	}
 	
 	/*---------------------------
-	* insert()
+	* update()
 	*------------------*/
 	
 	/**
@@ -203,14 +225,14 @@ public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 	 * @param jsonStr
 	 * @throws DatabaseProblem
 	 */
-	public void insert(String jsonStr) throws DatabaseProblem {
+	public void update(String jsonStr) throws DatabaseProblem {
 		if (currColl == null)
 			throwUnspecifiedCollection();
-		insert(currColl, jsonStr);
+		update(currColl, jsonStr);
 	}
 	
 	/*---------------------------
-	* insert()
+	* update()
 	*------------------*/
 	
 	/**
@@ -221,18 +243,18 @@ public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 	 * @param jsonStr
 	 * @throws DatabaseProblem
 	 */
-	public void insert(DBCollection coll, String jsonStr) throws DatabaseProblem {
+	public void update(DBCollection coll, String jsonStr) throws DatabaseProblem {
 		JSONObject jObj;
 		try {
 			jObj = new JSONObject(jsonStr);
 		} catch (JSONException e) {
 			throw new DatabaseProblem("Could not parse JSON string: " + e.getMessage());
 		}
-		insert(coll, jObj);
+		update(coll, jObj);
 	}
 	
 	/*---------------------------
-	* insert() 
+	* update() 
 	*------------------*/
 	
 	/**
@@ -240,7 +262,7 @@ public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 	 * @param coll
 	 * @param jObj
 	 */
-	public void insert(DBCollection coll, JSONObject jObj) {
+	public void update(DBCollection coll, JSONObject jObj) {
 		DBObject dbObj = jsonToDBObject(jObj);
 		coll.insert(dbObj);
 	}
@@ -282,7 +304,7 @@ public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 		String firstLine = lineIt.next();
 		String[] maybeColNames = firstLine.split(fldSep);
 		if (firstLineHasColNames == CSVColHeaderInfo.HAS_COL_HEADERS) {
-			importCSV(lineIt, fldSep, maybeColNames);
+			importCSV(lineIt, fldSep, maybeColNames, csvFile);
 			LineIterator.closeQuietly(lineIt);
 			return;
 		} else {
@@ -291,22 +313,25 @@ public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 			String[] colNames = new String[maybeColNames.length];
 			for (int i=0; i<maybeColNames.length; i++) {
 				colNames[i] = "col" + i;
-				// Close and re-open the iterator so that the first
-				// line we read above is read again:
-				lineIt.close();
-				importCSV(csvFile, fldSep, colNames);
-				return;
 			}
+			// Close and re-open the iterator so that the first
+			// line we read above is read again:
+			lineIt.close();
+			importCSV(csvFile, fldSep, colNames);
+			return;
 		}
 	}
 	
 	public void importCSV(File csvFile, String fldSep, String[] colNames) throws IOException, DatabaseProblem {
 		LineIterator lineIt = FileUtils.lineIterator(csvFile);
-		importCSV(lineIt, fldSep, colNames);
+		importCSV(lineIt, fldSep, colNames, csvFile);
 		LineIterator.closeQuietly(lineIt);
 	}
 	
-	private void importCSV(Iterator<String> lineIt, String fldSep, String[] colNames) throws DatabaseProblem {
+	private void importCSV(Iterator<String> lineIt, 
+						   String fldSep, 
+						   String[] colNames,
+						   File csvFile) throws DatabaseProblem {
 		int rowNum = -1; // for better error msgs
 		String colName = null;
 		while (lineIt.hasNext()) {
@@ -314,21 +339,66 @@ public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 			String row = lineIt.next();
 			int colIndex = 0;
 			for (String fld : row.split(fldSep)) {
-				if (colIndex > colNames.length) {
-					// Too few column names given; invent a column and warn:
-					Log.warn(String.format("Not enough column header names for row %d in CSV file; colNames: %s", rowNum, colNames));
-					colName = "col" + colIndex;
+				if (colIndex >= colNames.length) {
+					// Too few column names given. Check strictness:
+					if (importStrictness == CSVStrictness.LAX) {
+						Log.warn(String.format("More col values than column header names for row %d in CSV file %s; colNames: %s", 
+												rowNum, csvFile.getAbsolutePath(), colNames));
+						colName = "col" + colIndex;
+					} else {
+						throw new DatabaseProblem(String.format("CSV file %s has more values in row %d than column headers",
+												  csvFile.getAbsolutePath(), rowNum));
+					}
 				} else {
 					colName = colNames[colIndex];
 				}
 				
-				insert(String.format("{%s : %s}", colName, fld));
+				update(String.format("{%s : %s}", colName, fld));
 				colIndex++;
+			}
+			// Did we have a value for every col? (too many values was
+			// checked in the loop. This is a check for too few):
+			if (colIndex < colNames.length) {
+				// Too few:
+				if (importStrictness == CSVStrictness.VALUES_MUST_MATCH_COLS)
+					throw new DatabaseProblem(String.format("Too few column values for row %d in CSV file %s; colNames: %s", 
+											  rowNum, csvFile.getAbsolutePath(), colNames));
 			}
 		}
 	}
 	
 		
+	/*---------------------------
+	* setCSVImportStrictness() 
+	*------------------*/
+	
+	/**
+	 * Set how strict CSV import is about the imported CSV files.
+	 * Three choices: CSVStrictness.LAX allows rows with more 
+	 * column values than there are column headers, as well as
+	 * with fewer values. When more values are provided than column
+	 * headers, a new column
+	 * header is created. CSVStrictness.MISSING_COLS_OK allows
+	 * fewer column values to be present in rows than there are
+	 * column headers, but more values than column headers is not
+	 * allowed. CSVStrictness.VALUES_MUST_MATCH_COLS insists that
+	 * every row has as many columns as column headers.
+	 * @param strictness desired level of CSV row length to length of column headers.
+	 */
+	
+	public void setCSVImportStrictness(CSVStrictness strictness) {
+		importStrictness = strictness;
+	}
+	
+	/*---------------------------
+	* CSVImportStrictness() 
+	*------------------*/
+	
+	public CSVStrictness CSVImportStrictness() {
+		return importStrictness;
+	}
+	
+	
 	/*---------------------------
 	* getDatabaseNames() 
 	*------------------*/
@@ -358,17 +428,21 @@ public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 	@Override
 	//public PhotoSpreadDBObject copyObject() {
 	public <T extends PhotoSpreadObject> T copyObject() {
+		T newDb = null;
 		try {
-			return (T) new PhotoSpreadMongoDB(getCell(),
-										  getDBName(), 
-										  getHost(), 
-										  getPort(), 
-										  getUserID(),
-										  pwd,
-										  null);
+			  newDb =  (T) new PhotoSpreadMongoDB(getCell(),
+												  getDBName(), 
+												  getHost(), 
+												  getPort(), 
+												  getUserID(),
+												  pwd,
+												  null);
 		} catch (UnknownHostException e) {
 			throw new RuntimeException("Error copying Mongo database object: " + e.getMessage());
 		}
+		((PhotoSpreadMongoDB) newDb).useCollection(currColl.getName());
+		((PhotoSpreadMongoDB) newDb).setCSVImportStrictness(importStrictness);
+		return newDb;
 	}
 
 	/*---------------------------
@@ -380,9 +454,8 @@ public class PhotoSpreadMongoDB extends PhotoSpreadDBObject {
 	 */
 	@Override
 	public Component getObjectComponent(int height, int width)
-			throws CannotLoadImage {
-		// TODO Auto-generated method stub
-		return null;
+			throws NotImplementedException {
+		throw new NotImplementedException();
 	}
 
 	/****************************************************

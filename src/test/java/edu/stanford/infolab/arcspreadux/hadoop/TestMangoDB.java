@@ -2,6 +2,7 @@ package edu.stanford.infolab.arcspreadux.hadoop;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +30,7 @@ import edu.stanford.infolab.arcspreadux.photoSpread.PhotoSpread;
 import edu.stanford.infolab.arcspreadux.photoSpread.PhotoSpreadException.DatabaseProblem;
 import edu.stanford.infolab.arcspreadux.photoSpreadObjects.PhotoSpreadMongoDB;
 
+@SuppressWarnings("unused")
 public class TestMangoDB {
 
 	static final String DB_NAME = "UnitTest";
@@ -56,7 +58,7 @@ public class TestMangoDB {
 /*		MongoClient client = new MongoClient("maple.stanford.edu");
 		DB db = client.getDB("MyTest");
 		BasicDBObject obj = new BasicDBObject("testKey", 20);
-		db.getCollection("testColl").insert(obj);
+		db.getCollection("testColl").update(obj);
 		QueryBuilder qbuilder = QueryBuilder.start();
 		qbuilder.put("testKey");
 		qbuilder.is(20);
@@ -93,7 +95,6 @@ public class TestMangoDB {
 	 *****************************************************/
 	
 	@Test
-	@Ignore
 	public void test() {
 		
 		DBCursor cursor = null;
@@ -131,7 +132,6 @@ public class TestMangoDB {
 	}
 	
 	@Test
-	@Ignore
 	public void testJSONToDBObjSimple() throws JSONException {
 		JSONObject jObj = new JSONObject("{\"person\" : \"gaulle\"}");
 		DBObject dbObj = mongoDB.jsonToDBObject(jObj);
@@ -139,7 +139,6 @@ public class TestMangoDB {
 	}
 		
 	@Test
-	@Ignore
 	public void testJSONToDBObjNested() throws JSONException {
 		JSONObject jObj = new JSONObject();
 		JSONObject pJObj = new JSONObject();
@@ -153,7 +152,6 @@ public class TestMangoDB {
 	}
 	
 	@Test
-	@Ignore
 	public void testJSONToDBObjArray() throws JSONException {
 		JSONObject jObj = new JSONObject();
 		jObj.accumulate("testArr", "green");
@@ -167,48 +165,53 @@ public class TestMangoDB {
 	}
 	
 	@Test
-	@Ignore
-	public void testInsert() throws DatabaseProblem {
+	public void testNativeUpdate() throws DatabaseProblem {
 		mongoDB.useCollection("testColl");
-		mongoDB.insert("{testKey : 10}");
+		mongoDB.update("{testKey : 10}");
 		DBObject dObj = db.getCollection("testColl").findOne();
 		assertEquals("10", dObj.get("testKey"));
 	}
 	
-	
-	/*
-	 * Querying DOES NOT WORK with the in-memory fongoDb we
-	 * use here. At least not for this test method. So this 
-	 * method, while correct, won't find any results.
-	 */
 	@Test
-	@Ignore
 	public void testQuery() throws DatabaseProblem {
-		mongoDB.useCollection("testColl");
-		mongoDB.insert("{testKey : 10}");
+		DBCursor cursor = null;
+		DBObject qObj = null;
+		DBObject resObj = null;
 		
-		System.out.println(String.format("Db has %d entries", mongoDB.getCount()));
-		System.out.println(String.format("findOne() returns: %s", db.getCollection("testColl").findOne()));
+		mongoDB.useCollection("unitTest");
+		mongoDB.update("{testKey : 10}");
 		
-		DBCursor cur0 = db.getCollection("testColl").find();
-		printResults(cur0);
+		//System.out.println(String.format("Db has %d entries", mongoDB.getCount()));
+		//System.out.println(String.format("findOne() returns: %s", db.getCollection("unitTest").findOne()));
 		
-		BasicDBObject obj0 = new BasicDBObject("testKey", 10);
-		cur0 = db.getCollection("testColl").find(obj0);
-		printResults(cur0);
+		//cursor = db.getCollection("unitTest").find();
+		//printResults(cursor);
 		
-		
-		QueryBuilder qbuilder = QueryBuilder.start();
-		qbuilder.put("testKey");
-		qbuilder.is(10);
-		DBObject qObj = qbuilder.get();
-		//*******DBCursor cursor = mongoDB.query(qObj);
-		DBCursor cursor = db.getCollection("testColl").find(qObj);
-		System.out.println(String.format("Cursor count: %d", cursor.count()));
-		printResults(cursor);
+		qObj = new BasicDBObject("testKey", "10");
+		cursor = db.getCollection("unitTest").find(qObj);
+		if (!cursor.hasNext()) 
+			fail("Could not retrieve {'testKey' : '10'}");
+		resObj = cursor.next();
+		assertEquals("10", resObj.get("testKey"));
 	}
 	
 	@Test
+	public void testJSONQuery() throws DatabaseProblem, JSONException {
+		DBCursor cursor = null;
+		DBObject resObj = null;
+		
+		mongoDB.useCollection("unitTest");
+		mongoDB.update("{testKey : 10}");
+		
+		cursor = mongoDB.query("{testKey : 10}");
+		if (!cursor.hasNext()) 
+			fail("Could not retrieve {'testKey' : '10'}");
+		resObj = cursor.next();
+		assertEquals("10", resObj.get("testKey"));
+	}
+	
+	@Test
+	
 	public void testHealthyCSVWithColHeadersImport() throws DatabaseProblem, IOException {
 		mongoDB.useCollection("csvTest");
 		File csvFile = new File("src/test/resources/csvWithColHeaders.csv");
@@ -230,8 +233,121 @@ public class TestMangoDB {
 		cursor = mongoDB.query(qObj);
 		resObj = cursor.next();
 		assertEquals("herColFld", resObj.get("herCol"));
+	}
+	
+	/**
+	 * The test CSV file looks like this:
+	 * 
+	 * myCol,yourCol
+	 * 1,2,3
+	 * 4,5
+	 * "myColFld","yourColFld","herColFld"
+	 * 
+	 * @throws DatabaseProblem
+	 * @throws IOException
+	 */
+	@Test
+	public void testTooFewHeadersWithLax() throws DatabaseProblem, IOException {
+		mongoDB.useCollection("unitTest");
+		File csvFile = new File("src/test/resources/csvTooFewHeaders.csv");
+		
+		mongoDB.setCSVImportStrictness(PhotoSpreadMongoDB.CSVStrictness.LAX);
+		mongoDB.importCSV(csvFile, ",", PhotoSpreadMongoDB.CSVColHeaderInfo.HAS_COL_HEADERS);
+		
+		// Since strictness is LAX, the first row
+		// should have been imported, even though it has
+		// more vals than cols. Test 1st row, 1st col:
+		QueryBuilder qBuilder = QueryBuilder.start();
+		qBuilder.put("myCol");
+		qBuilder.is("1");
+		DBObject qObj = qBuilder.get();
+		
+		DBCursor cursor = mongoDB.query(qObj);
+		if (!cursor.hasNext()) {
+			fail("Legal row '1,2,3' was not imported (1st col does not match)");
+		}
+		DBObject resObj = cursor.next();
+		assertEquals("1", resObj.get("myCol"));
+
+		// Test 1st row, last (excessive) column:
+		qBuilder = QueryBuilder.start();
+		qBuilder.put("col2");
+		qBuilder.is("3");
+		qObj = qBuilder.get();
+		
+		cursor = mongoDB.query(qObj);
+		if (!cursor.hasNext()) {
+			fail("Legal CSV row: doc '1,2,3' was not imported (3rd col does not match");
+		}
+		resObj = cursor.next();
+		assertEquals("3", resObj.get("col2"));
+		
+		
+		// Check the one legal row:
+		
+		qBuilder = QueryBuilder.start();
+		qBuilder.put("yourCol");
+		qBuilder.is("5");
+		qObj = qBuilder.get();
+		cursor = mongoDB.query(qObj);
+		if (!cursor.hasNext()) {
+			fail("The one legal CSV row: doc {'myCol' : 4, 'yourCol' : 5} did not get imported.");
+		}
+		resObj = cursor.next();
+		assertEquals("5", resObj.get("yourCol"));
+	}
+
+	@Test
+	public void testTooFewHeadersWithAllowTooFew() throws DatabaseProblem, IOException {
+		QueryBuilder qBuilder = null;
+		DBObject qObj = null;
+		DBObject resObj = null;
+		DBCursor cursor = null;
+		
+		mongoDB.useCollection("unitTest");
+		File csvFile = new File("src/test/resources/csvTooFewHeaders.csv");
+		mongoDB.setCSVImportStrictness(PhotoSpreadMongoDB.CSVStrictness.MISSING_COLS_OK);
+		
+		boolean gotError = false;
+		try{
+			mongoDB.importCSV(csvFile, ",", PhotoSpreadMongoDB.CSVColHeaderInfo.HAS_COL_HEADERS);
+		} catch (DatabaseProblem e) {
+			gotError = true;
+		}
+		assertTrue(gotError);
+
+		// Since strictness disallows too many cols, the second (and third) rows
+		// should only have their first two cols imported. Test 2nd row, 3rd col:
+		// 
+		qBuilder = QueryBuilder.start();
+		qBuilder.put("myCol");
+		qBuilder.is("1");
+		qObj = qBuilder.get();
+		
+		cursor = mongoDB.query(qObj);
+		if (!cursor.hasNext()) {
+			fail("First col of 2nd row not present.");
+		}
+		resObj = cursor.next();
+		assertEquals("1", resObj.get("myCol"));
+		
+		// Check the one legal row:
+
+		qBuilder = QueryBuilder.start();
+		qBuilder.put("yourCol");
+		qBuilder.is("5");
+		qObj = qBuilder.get();
+		cursor = mongoDB.query(qObj);
+		if (!cursor.hasNext()) {
+			fail("The one legal CSV row: doc {'myCol' : 4, 'yourCol' : 5} did not get imported.");
+		}
+		resObj = cursor.next();
+		assertEquals("5", resObj.get("yourCol"));
 
 	}
+
+	
+	
 	
 	// ----------------------  Utilities --------------------------
 	
