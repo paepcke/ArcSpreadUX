@@ -1,7 +1,11 @@
 package edu.stanford.infolab.arcspreadux.hadoop;
 
+import static org.junit.Assert.assertEquals;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.io.FilenameUtils;
 import org.junit.After;
@@ -29,14 +33,14 @@ public class TestSQliteAccess {
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
 		
-		PhotoSpread.initDefaultProperties();
-		sqliteDB = new PhotoSpreadSQLite(new PhotoSpreadCell(new PhotoSpreadTableModel(), 0, 0),
-										 testDBPath,
-										 new UUID("foobar")); 
 	}
 	
 	@Before
 	public void setUp() throws Exception {
+		PhotoSpread.initDefaultProperties();
+		sqliteDB = new PhotoSpreadSQLite(new PhotoSpreadCell(new PhotoSpreadTableModel(), 0, 0),
+										 testDBPath,
+										 new UUID("foobar")); 
 	}
 
 	@After
@@ -45,11 +49,38 @@ public class TestSQliteAccess {
 
 	@Test
 	public void testQuery() throws DatabaseProblem, SQLException {
-		ResultSet res = sqliteDB.query("SELECT word FROM Ngrams WHERE frequency=3;");
-		while (res.next()) {
-			String resWord = res.getString("word");
-			System.out.println(resWord);
+		try {
+			ResultSet res = sqliteDB.query("SELECT word FROM Ngrams WHERE frequency=3;");
+			List<String> resVals = new ArrayList<String>(); 
+			while (res.next()) {
+				String resWord = res.getString("word");
+				resVals.add(resWord);
+				//System.out.println(resWord);
+			}
+			String[] trueRes = new String[] {"one", "one", "one", "three", "six", "eight", "ten", "twelve"};     
+			for (int i=0; i<trueRes.length; i++) {
+				assertEquals(trueRes[i], resVals.get(i));
+			}
+		} finally {
+			sqliteDB.closeAll();
 		}
+	}
+	
+	public void testResultSetColNum() throws DatabaseProblem, SQLException {
+		try {
+			ResultSet res = sqliteDB.query("SELECT word FROM Ngrams WHERE frequency=3;");
+			// Result is just one column wide:
+			assertEquals(1, sqliteDB.getNumColumns(res));
+		} finally {
+			sqliteDB.closeAll();
+		}
+	}
+	
+	@Test
+	public void testGetNumCols() throws SQLException {
+		int numCols = sqliteDB.getNumColumns("Ngrams");
+		// Number cols should be: word,follower,frequency:
+		assertEquals(3,numCols);
 	}
 
 }
